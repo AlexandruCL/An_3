@@ -13,9 +13,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\an_3\\fcpl\\week_1\\fcpl.csproj",
-      "projectName": "fcpl",
-      "projectPath": "D:\\an_3\\fcpl\\week_1\\fcpl.csproj",
+      "projectUniqueName": "D:\\an_3\\fcpl\\week_1\\week_1.csproj",
+      "projectName": "week_1",
+      "projectPath": "D:\\an_3\\fcpl\\week_1\\week_1.csproj",
       "packagesPath": "C:\\Users\\alexc\\.nuget\\packages\\",
       "outputPath": "D:\\an_3\\fcpl\\week_1\\obj\\",
       "projectStyle": "PackageReference",
