@@ -50,7 +50,7 @@ public class StudentRepository {
 
     public Map<String, List<Student>> getOverageStudentsGroupedByUniversity() {
         return students.stream()
-                .filter(s -> s.getAge() >= 18)
+                .filter(s -> s.getAge() >= 18 && s.getUniversity() != null)
                 .collect(Collectors.groupingBy(Student::getUniversity));
     }
 
