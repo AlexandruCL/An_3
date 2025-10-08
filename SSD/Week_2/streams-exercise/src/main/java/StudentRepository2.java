@@ -2,13 +2,14 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class StudentRepository {
+public class StudentRepository2 {
     private Collection<Student> students;
 
-    public StudentRepository(Collection<Student> students) {
+    public StudentRepository2(Collection<Student> students) {
         this.students = new ArrayList<>(students);
     }
 
+    // ✅ IMPLEMENTED
     public List<String> getStudentEmailsSortedByAgeUnderTheAgeOf(int age) {
         return students.stream()
                 .filter(s -> s.getAge() < age)
@@ -22,6 +23,7 @@ public class StudentRepository {
      *
      * SIDE EFFECT: makes all student names uppercase
      */
+    // ✅ IMPLEMENTED
     public List<String> makeStudentNamesUppercaseAndReturnThemAsSortedDistinctList() {
         students.forEach(s -> s.setName(s.getName().toUpperCase()));
         return students.stream()
@@ -31,6 +33,7 @@ public class StudentRepository {
                 .collect(Collectors.toList());
     }
 
+    // ✅ IMPLEMENTED
     public Set<String> getNonNullUniversities() {
         return students.stream()
                 .map(Student::getUniversity)
@@ -38,6 +41,7 @@ public class StudentRepository {
                 .collect(Collectors.toSet());
     }
 
+    // ✅ IMPLEMENTED
     public Map<String, Student> getStudentsMappedByEmail() {
         return students.stream()
                 .filter(s -> s.getEmail() != null)
@@ -48,12 +52,14 @@ public class StudentRepository {
                 ));
     }
 
+    // ✅ IMPLEMENTED
     public Map<String, List<Student>> getOverageStudentsGroupedByUniversity() {
         return students.stream()
                 .filter(s -> s.getAge() >= 18)
                 .collect(Collectors.groupingBy(Student::getUniversity));
     }
 
+    // ✅ IMPLEMENTED
     public Optional<Student> getTheStudentWithTheNthShortestEmail(int n) {
         return students.stream()
                 .filter(s -> s.getEmail() != null)
@@ -62,6 +68,7 @@ public class StudentRepository {
                 .findFirst();
     }
 
+    // ✅ IMPLEMENTED
     public Optional<String> getTheNameOfTheSecondOldestStudent() {
         return students.stream()
                 .sorted(Comparator.comparingInt(Student::getAge).reversed())
@@ -70,6 +77,7 @@ public class StudentRepository {
                 .findFirst();
     }
 
+    // ✅ IMPLEMENTED
     public OptionalDouble getAverageAgeOfNStudentsInUniversity(int n, String university) {
         return students.stream()
                 .filter(s -> Objects.equals(s.getUniversity(), university))
@@ -78,6 +86,7 @@ public class StudentRepository {
                 .average();
     }
 
+    // ✅ IMPLEMENTED
     public long countStudentsWithNamesLongerThan(int n) {
         return students.stream()
                 .filter(s -> s.getName() != null && s.getName().length() > n)
@@ -87,6 +96,7 @@ public class StudentRepository {
     /**
      * Students in no university (university == null) are considered to be in the same university
      */
+    // ✅ IMPLEMENTED
     public long countNumberOfStudentsWithAtLeastNColleaguesInDifferentUniversity(int n) {
         return students.stream()
                 .filter(student -> student.getColleagues().stream()
@@ -117,7 +127,7 @@ public class StudentRepository {
 
     /**
      * Helper method for implementing getStudentsWithAtLeastOneColleagueWithDifferentEmailDomain()
-     */
+     */ 
     private static String getEmailDomain(String email) {
         if (email.indexOf('@') == -1) {
             return "";
