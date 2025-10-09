@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\An_3\\FCPL\\Week_1\\week_1.csproj": {}
+    "D:\\an_3\\fcpl\\week_1\\week_1.csproj": {}
   },
   "projects": {
-    "d:\\An_3\\FCPL\\Week_1\\week_1.csproj": {
+    "D:\\an_3\\fcpl\\week_1\\week_1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\An_3\\FCPL\\Week_1\\week_1.csproj",
+        "projectUniqueName": "D:\\an_3\\fcpl\\week_1\\week_1.csproj",
         "projectName": "week_1",
-        "projectPath": "d:\\An_3\\FCPL\\Week_1\\week_1.csproj",
+        "projectPath": "D:\\an_3\\fcpl\\week_1\\week_1.csproj",
         "packagesPath": "C:\\Users\\alexc\\.nuget\\packages\\",
-        "outputPath": "d:\\An_3\\FCPL\\Week_1\\obj\\",
+        "outputPath": "D:\\an_3\\fcpl\\week_1\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\alexc\\AppData\\Roaming\\NuGet\\NuGet.Config"
