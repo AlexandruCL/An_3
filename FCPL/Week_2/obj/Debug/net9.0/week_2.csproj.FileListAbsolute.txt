@@ -1,0 +1,15 @@
+D:\an_3\fcpl\week_2\bin\Debug\net9.0\week_2.exe
+D:\an_3\fcpl\week_2\bin\Debug\net9.0\week_2.deps.json
+D:\an_3\fcpl\week_2\bin\Debug\net9.0\week_2.runtimeconfig.json
+D:\an_3\fcpl\week_2\bin\Debug\net9.0\week_2.dll
+D:\an_3\fcpl\week_2\bin\Debug\net9.0\week_2.pdb
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.GeneratedMSBuildEditorConfig.editorconfig
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.AssemblyInfoInputs.cache
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.AssemblyInfo.cs
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.csproj.CoreCompileInputs.cache
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.sourcelink.json
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.dll
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\refint\week_2.dll
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.pdb
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\week_2.genruntimeconfig.cache
+D:\an_3\fcpl\week_2\obj\Debug\net9.0\ref\week_2.dll
