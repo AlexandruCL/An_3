@@ -52,7 +52,7 @@ public class StudentRepository {
         return students.stream()
                 .filter(s -> s.getEmail() != null)
                 .sorted(Comparator.comparingInt(s -> s.getEmail().length()))
-                .skip(n - 1L)
+                .skip(n - 1)
                 .findFirst();
     }
 
