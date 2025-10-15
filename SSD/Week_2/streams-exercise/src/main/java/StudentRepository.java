@@ -40,12 +40,7 @@ public class StudentRepository {
 
     public Map<String, Student> getStudentsMappedByEmail() {
         return students.stream()
-                .filter(s -> s.getEmail() != null)
-                .collect(Collectors.toMap(
-                        Student::getEmail,
-                        Function.identity(),
-                        (s1, s2) -> s1 // handle duplicate emails, keep first
-                ));
+                .collect(Collectors.toMap(Student::getEmail, s -> s));
     }
 
     public Map<String, List<Student>> getOverageStudentsGroupedByUniversity() {
@@ -90,7 +85,6 @@ public class StudentRepository {
     public long countNumberOfStudentsWithAtLeastNColleaguesInDifferentUniversity(int n) {
         return students.stream()
                 .filter(student -> student.getColleagues().stream()
-                        .filter(other -> other != student)
                         .filter(other -> !isInUniversity(student, other.getUniversity()))
                         .count() >= n)
                 .count();
