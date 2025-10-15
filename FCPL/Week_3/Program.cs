@@ -118,19 +118,25 @@ class Program
                     decimal balance = decimal.TryParse(Console.ReadLine(), out decimal balanceResult) ? balanceResult : throw new FormatException("Invalid input. Please enter a valid decimal number.");
                     Account account = new Account(name, balance);
                     Console.WriteLine($"Account created for {name} with initial balance {balance}");
-                    Console.Write("Enter amount to withdraw: ");
-                    double amount = double.TryParse(Console.ReadLine(), out double amountResult) ? amountResult : throw new FormatException("Invalid input. Please enter a valid number.");
-                    if (account.Withdraw(amount, out double remainingBalance))
+                    bool stopEx3 = false;
+                    while (stopEx3 == false)
                     {
-                        Console.WriteLine($"Withdrawal successful. Remaining balance: {remainingBalance}");
+                        Console.Write("Enter amount to withdraw(enter -1 to stop the program):  ");
+                        double amount = double.TryParse(Console.ReadLine(), out double amountResult) ? amountResult : throw new FormatException("Invalid input. Please enter a valid number.");
+                        if (amount == -1)
+                            break;
+                        if (account.Withdraw(amount, out double remainingBalance))
+                        {
+                            Console.WriteLine($"Withdrawal successful. Remaining balance: {remainingBalance}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Withdrawal failed. Remaining balance: {remainingBalance}");
+                        }
+                        Console.WriteLine("After withdrawal account information: \n" +
+                                        $"Name: {name}\n" +
+                                        $"Balance: {remainingBalance}");
                     }
-                    else
-                    {
-                        Console.WriteLine($"Withdrawal failed. Remaining balance: {remainingBalance}");
-                    }
-                    Console.WriteLine("After withdrawal account information: \n" +
-                                      $"Name: {name}\n" +
-                                      $"Balance: {remainingBalance}");
                     break;
                 case 0:
                     stop = 0;
