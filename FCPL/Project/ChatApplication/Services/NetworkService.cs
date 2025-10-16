@@ -1,5 +1,5 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,20 +13,18 @@ namespace ChatApplication.Services
     public class NetworkService
     {
         private TcpListener? _server;
-        private TcpClient? _client;
-        private NetworkStream? _stream;
+        private List<TcpClient> _clients = new List<TcpClient>();
         private readonly int _listenPort;
-        private readonly int _connectPort;
         private bool _isRunning;
+        private readonly int[] _allPorts = { 5000, 5001, 5002, 5003, 5004 };
 
         public event Action<ChatMessage>? MessageReceived;
 
-        public NetworkService(int listenPort, int connectPort)
+        public NetworkService(int listenPort)
         {
             _listenPort = listenPort;
-            _connectPort = connectPort;
             StartServer();
-            _ = Task.Run(async () => await ConnectToServerAsync());
+            _ = Task.Run(async () => await ConnectToOtherUsersAsync());
         }
 
         private void StartServer()
@@ -42,29 +40,31 @@ namespace ChatApplication.Services
             catch (Exception ex)
             {
                 Logger.LogError($"Server start error: {ex.Message}");
-                Console.WriteLine($"Server start error: {ex.Message}");
             }
         }
 
-        private async Task ConnectToServerAsync()
+        private async Task ConnectToOtherUsersAsync()
         {
             await Task.Delay(2000);
             
-            for (int i = 0; i < 10; i++)
+            foreach (var port in _allPorts)
             {
+                if (port == _listenPort) continue;
+                
                 try
                 {
-                    _client = new TcpClient();
-                    await _client.ConnectAsync(IPAddress.Loopback, _connectPort);
-                    _stream = _client.GetStream();
-                    _ = Task.Run(async () => await ReceiveMessagesAsync());
-                    Logger.LogMessage($"Connected to port {_connectPort}");
-                    Console.WriteLine($"Connected to port {_connectPort}");
-                    break;
+                    var client = new TcpClient();
+                    await client.ConnectAsync(IPAddress.Loopback, port);
+                    lock (_clients)
+                    {
+                        _clients.Add(client);
+                    }
+                    _ = Task.Run(async () => await ReceiveMessagesAsync(client));
+                    Logger.LogMessage($"Connected to port {port}");
                 }
                 catch
                 {
-                    await Task.Delay(1000);
+                    // Port not available, user not connected
                 }
             }
         }
@@ -76,62 +76,81 @@ namespace ChatApplication.Services
                 try
                 {
                     var client = await _server.AcceptTcpClientAsync();
-                    _client = client;
-                    _stream = client.GetStream();
-                    _ = Task.Run(async () => await ReceiveMessagesAsync());
-                    Console.WriteLine($"Client connected on port {_listenPort}");
+                    lock (_clients)
+                    {
+                        _clients.Add(client);
+                    }
+                    _ = Task.Run(async () => await ReceiveMessagesAsync(client));
+                    Logger.LogMessage($"Client connected on port {_listenPort}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Listen error: {ex.Message}");
+                    Logger.LogError($"Listen error: {ex.Message}");
                 }
             }
         }
 
-        private async Task ReceiveMessagesAsync()
+        private async Task ReceiveMessagesAsync(TcpClient client)
         {
-            byte[] buffer = new byte[4096];
-            
-            while (_isRunning && _stream != null)
+            NetworkStream? stream = null;
+            try
             {
-                try
+                stream = client.GetStream();
+                byte[] buffer = new byte[4096];
+                
+                while (_isRunning && client.Connected)
                 {
-                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
                     if (bytesRead > 0)
                     {
                         string json = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                         var message = JsonConvert.DeserializeObject<ChatMessage>(json);
                         if (message != null)
                         {
-                            Logger.LogMessage($"Message received from {message.Username}: {message.Text}");
                             MessageReceived?.Invoke(message);
                         }
                     }
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Receive error: {ex.Message}");
+            }
+            finally
+            {
+                stream?.Close();
+                lock (_clients)
                 {
-                    Logger.LogError($"Receive error: {ex.Message}");
-                    Console.WriteLine($"Receive error: {ex.Message}");
-                    break;
+                    _clients.Remove(client);
                 }
+                client.Close();
             }
         }
 
-        public async void SendMessage(ChatMessage message)
+        public async void BroadcastMessage(ChatMessage message)
         {
-            if (_stream != null && _stream.CanWrite)
+            string json = JsonConvert.SerializeObject(message);
+            byte[] data = Encoding.UTF8.GetBytes(json);
+
+            List<TcpClient> clientsCopy;
+            lock (_clients)
+            {
+                clientsCopy = new List<TcpClient>(_clients);
+            }
+
+            foreach (var client in clientsCopy)
             {
                 try
                 {
-                    string json = JsonConvert.SerializeObject(message);
-                    byte[] data = Encoding.UTF8.GetBytes(json);
-                    await _stream.WriteAsync(data, 0, data.Length);
-                    Logger.LogMessage($"Message sent by {message.Username}: {message.Text}");
+                    if (client.Connected)
+                    {
+                        var stream = client.GetStream();
+                        await stream.WriteAsync(data, 0, data.Length);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"Send error: {ex.Message}");
-                    Console.WriteLine($"Send error: {ex.Message}");
+                    Logger.LogError($"Broadcast error: {ex.Message}");
                 }
             }
         }
@@ -139,8 +158,16 @@ namespace ChatApplication.Services
         public void Stop()
         {
             _isRunning = false;
-            _stream?.Close();
-            _client?.Close();
+            
+            lock (_clients)
+            {
+                foreach (var client in _clients)
+                {
+                    client.Close();
+                }
+                _clients.Clear();
+            }
+            
             _server?.Stop();
         }
     }

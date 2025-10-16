@@ -8,3 +8,63 @@
 16.10.2025 18:53:00: User A: Chat printed
 16.10.2025 18:53:03: User A: Chat cleared
 16.10.2025 18:53:05: User A: Application closed
+16.10.2025 18:59:13: Server started on port 5000
+16.10.2025 18:59:13: AlexandruCL instance started on port 5000
+16.10.2025 18:59:13: AlexandruCL: Loaded 0 messages from history
+16.10.2025 18:59:40 [ERROR]: Server start error: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+16.10.2025 18:59:40: alex2 instance started on port 5000
+16.10.2025 18:59:40: alex2: Loaded 0 messages from history
+16.10.2025 18:59:42: [alex2] SENT: aa
+16.10.2025 18:59:44: [AlexandruCL] SENT: aa
+16.10.2025 18:59:46: alex2: Application closed
+16.10.2025 19:00:07: Server started on port 5002
+16.10.2025 19:00:07: User instance started on port 5002
+16.10.2025 19:00:07: User: Loaded 0 messages from history
+16.10.2025 19:00:09: Connected to port 5000
+16.10.2025 19:00:09: Client connected on port 5000
+16.10.2025 19:00:10: [User] SENT: a
+16.10.2025 19:00:10: [User] RECEIVED: a
+16.10.2025 19:00:14: [AlexandruCL] SENT: adasdada
+16.10.2025 19:00:14: [AlexandruCL] RECEIVED: adasdada
+16.10.2025 19:00:15: [User] SENT: asdadsads
+16.10.2025 19:00:15: [User] RECEIVED: asdadsads
+16.10.2025 19:00:19: AlexandruCL: Application closed
+16.10.2025 19:00:19 [ERROR]: Receive error: Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..
+16.10.2025 19:00:20: User: Application closed
+16.10.2025 19:00:20 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+16.10.2025 19:01:06: Server started on port 5000
+16.10.2025 19:01:06: asdasdads instance started on port 5000
+16.10.2025 19:01:06: asdasdads: Loaded 0 messages from history
+16.10.2025 19:01:48: Server started on port 5001
+16.10.2025 19:01:48: User instance started on port 5001
+16.10.2025 19:01:48: User: Loaded 0 messages from history
+16.10.2025 19:01:50: Connected to port 5000
+16.10.2025 19:01:50: Client connected on port 5000
+16.10.2025 19:01:56: [User] SENT: asdadsasd
+16.10.2025 19:01:56: [User] RECEIVED: asdadsasd
+16.10.2025 19:02:05: [asdasdads] SENT: ioabwngoknag
+
+
+asdadsadsa
+16.10.2025 19:02:05: [asdasdads] RECEIVED: ioabwngoknag
+
+
+asdadsadsa
+16.10.2025 19:02:07: [asdasdads] SENT: asdadsadsa
+16.10.2025 19:02:07: [asdasdads] RECEIVED: asdadsadsa
+16.10.2025 19:02:12: [User] SENT: ia la muie fraiere
+16.10.2025 19:02:12: [User] RECEIVED: ia la muie fraiere
+16.10.2025 19:02:15: [asdasdads] SENT: aiondgoasngdos
+16.10.2025 19:02:15: [asdasdads] RECEIVED: aiondgoasngdos
+16.10.2025 19:02:20: User: Chat printed
+16.10.2025 19:02:23: User: Conversation saved with 5 messages
+16.10.2025 19:02:23: User: Application closed
+16.10.2025 19:02:23 [ERROR]: Receive error: Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..
+16.10.2025 19:02:23 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+16.10.2025 19:02:24: asdasdads: Application closed
+16.10.2025 19:02:24 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+16.10.2025 19:02:30: Server started on port 5000
+16.10.2025 19:02:30: User instance started on port 5000
+16.10.2025 19:02:30: User: Loaded 5 messages from history
+16.10.2025 19:02:33: User: Application closed
+16.10.2025 19:02:33 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.

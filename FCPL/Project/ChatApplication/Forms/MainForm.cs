@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.Net;
+using System.Net.Sockets;
 using System.Windows.Forms;
 using ChatApplication.Models;
 using ChatApplication.Services;
@@ -19,25 +21,112 @@ namespace ChatApplication.Forms
         {
             InitializeComponent();
             
-            // Ask user to choose their role
-            var result = MessageBox.Show("Are you User A?\n\nClick 'Yes' for User A\nClick 'No' for User B", 
-                "Select User", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            
-            if (result == DialogResult.Yes)
+            // Ask user for their username
+            string? inputUsername = null;
+            while (string.IsNullOrWhiteSpace(inputUsername))
             {
-                userName = "User A";
-                textBoxUsername.Text = "User A";
-                this.Text = "Chat Application - User A";
-                networkService = new NetworkService(5000, 5001);
-                Logger.LogMessage("User A instance started");
+                inputUsername = Microsoft.VisualBasic.Interaction.InputBox(
+                    "Enter your username (max 20 characters):", 
+                    "Username", 
+                    "User");
+                
+                if (string.IsNullOrWhiteSpace(inputUsername))
+                {
+                    var retry = MessageBox.Show("Username cannot be empty. Try again?", 
+                        "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    if (retry == DialogResult.No)
+                    {
+                        Application.Exit();
+                        return;
+                    }
+                }
+                else if (inputUsername.Length > 20)
+                {
+                    MessageBox.Show("Username too long. Maximum 20 characters.", 
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    inputUsername = null;
+                }
             }
-            else
+
+            userName = inputUsername;
+            textBoxUsername.Text = userName;
+            this.Text = $"Chat Application - {userName}";
+
+            // Ask for port number (5000-5004 for up to 5 users)
+            int userPort = 5000;
+            bool portSelected = false;
+            
+            while (!portSelected)
             {
-                userName = "User B";
-                textBoxUsername.Text = "User B";
-                this.Text = "Chat Application - User B";
-                networkService = new NetworkService(5001, 5000);
-                Logger.LogMessage("User B instance started");
+                var portDialog = new Form()
+                {
+                    Text = "Select Port",
+                    Width = 300,
+                    Height = 200,
+                    StartPosition = FormStartPosition.CenterScreen,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    MaximizeBox = false,
+                    MinimizeBox = false
+                };
+                
+                var label = new Label() { Text = "Select your port (5000-5004):", Left = 20, Top = 20, Width = 250 };
+                var comboBox = new ComboBox() { Left = 20, Top = 50, Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
+                comboBox.Items.AddRange(new object[] { "5000", "5001", "5002", "5003", "5004" });
+                comboBox.SelectedIndex = 0;
+                
+                var okButton = new Button() { Text = "OK", Left = 100, Top = 100, Width = 75, DialogResult = DialogResult.OK };
+                var cancelButton = new Button() { Text = "Cancel", Left = 180, Top = 100, Width = 75, DialogResult = DialogResult.Cancel };
+                
+                portDialog.Controls.Add(label);
+                portDialog.Controls.Add(comboBox);
+                portDialog.Controls.Add(okButton);
+                portDialog.Controls.Add(cancelButton);
+                portDialog.AcceptButton = okButton;
+                portDialog.CancelButton = cancelButton;
+                
+                if (portDialog.ShowDialog() == DialogResult.OK)
+                {
+                    userPort = int.Parse(comboBox.SelectedItem.ToString());
+                    
+                    // Check if port is available
+                    if (IsPortInUse(userPort))
+                    {
+                        var retry = MessageBox.Show(
+                            $"Port {userPort} is already in use by another user.\n\nPlease select a different port.", 
+                            "Port In Use", 
+                            MessageBoxButtons.RetryCancel, 
+                            MessageBoxIcon.Warning);
+                        
+                        if (retry == DialogResult.Cancel)
+                        {
+                            Application.Exit();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        portSelected = true;
+                    }
+                }
+                else
+                {
+                    Application.Exit();
+                    return;
+                }
+            }
+
+            try
+            {
+                networkService = new NetworkService(userPort);
+                Logger.LogMessage($"{userName} instance started on port {userPort}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to start network service: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Logger.LogError($"Failed to start network service on port {userPort}: {ex.Message}");
+                Application.Exit();
+                return;
             }
 
             chatSession = new ChatSession();
@@ -46,6 +135,21 @@ namespace ChatApplication.Forms
 
             networkService.MessageReceived += OnMessageReceived;
             LoadChatHistory();
+        }
+
+        private bool IsPortInUse(int port)
+        {
+            try
+            {
+                TcpListener listener = new TcpListener(IPAddress.Loopback, port);
+                listener.Start();
+                listener.Stop();
+                return false;
+            }
+            catch (SocketException)
+            {
+                return true;
+            }
         }
 
         private void LoadChatHistory()
@@ -65,7 +169,7 @@ namespace ChatApplication.Forms
             {
                 var message = new ChatMessage(textBoxUsername.Text, textBoxMessage.Text);
                 chatSession.AddMessage(message);
-                networkService.SendMessage(message);
+                networkService.BroadcastMessage(message);
                 DisplayMessage(message);
                 Logger.LogMessage($"[{textBoxUsername.Text}] SENT: {textBoxMessage.Text}");
                 textBoxMessage.Clear();
@@ -73,7 +177,7 @@ namespace ChatApplication.Forms
             }
             else
             {
-                MessageBox.Show("Please enter both username and message.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please enter a message.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 Logger.LogError($"{userName}: Attempted to send empty message");
             }
         }
