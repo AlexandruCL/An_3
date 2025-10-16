@@ -1,0 +1,118 @@
+banking system mai complex
+citire de date din pc dintr un fisier txt
+
+health care administration system
+2 students
+
+account token generation
+generare tokens pentru cum sunt alea de la banci etc
+
+online site management
+window form
+
+file data manipulation
+cum sa treci dintr un format in altul
+
+book keeping system
+
+chat application
+c# windows form sa ai practic un chat intre 2 window uri
+sa se salveze tot chat ul
+sa poti printa tot chat ul printr o metoda
+
+real estate agency
+exact ca si labu 4 pentru inceput, dupa continuat
+
+stock exchange demo account
+sa folosim un api de pe un stock etc si sa putem cumpara stock uri
+
+restaurant table keeper
+C# form sa poti practic sa ai toate mesele cu toate datele
+
+game design
+plm incerc sa gasesc tetris ul )))
+
+
+
+
+
+
+Cerință proiect – Aplicație Chat în C# (Windows Forms)
+Descriere generală
+
+Se dorește realizarea unei aplicații de tip Chat local, dezvoltată în C# folosind Windows Forms, care să permită comunicarea bidirecțională între două instanțe ale aplicației (două ferestre diferite).
+Conversația trebuie să poată fi salvată local și printată la cerere.
+
+Cerințe funcționale
+
+Interfață grafică (UI):
+
+Fiecare fereastră va reprezenta un utilizator distinct (ex: „User A” și „User B”).
+
+Fiecare fereastră va conține:
+
+O zonă de afișare a mesajelor (RichTextBox sau ListBox).
+
+O zonă de introducere a mesajului (TextBox).
+
+Un buton „Trimite”.
+
+Un meniu sau buton „Opțiuni” care să conțină:
+
+„Salvează conversația”
+
+„Printează conversația”
+
+„Șterge chatul”
+
+Funcționalitate de comunicare:
+
+Mesajele trimise de un utilizator apar imediat și în fereastra celuilalt utilizator.
+
+Se pot folosi una dintre următoarele metode de comunicare:
+
+TCP/IP local (localhost) – pentru un chat real între două procese.
+
+Evenimente și fișiere temporare – pentru o simulare simplificată.
+
+Fiecare mesaj va conține:
+
+Numele utilizatorului
+
+Ora și data trimiterii
+
+Textul mesajului
+
+Persistența datelor (salvarea conversației):
+
+La cerere, conversația completă se salvează într-un fișier text (chat_log.txt) într-un folder dedicat.
+
+La pornirea aplicației, dacă există o conversație anterioară, aceasta este încărcată automat.
+
+Funcționalitate de printare:
+
+Implementați o metodă publică PrintChat() care permite tipărirea conversației direct din aplicație, folosind PrintDocument din System.Drawing.Printing.
+
+Înainte de tipărire, să existe o previzualizare (PrintPreviewDialog).
+
+Gestionarea erorilor:
+
+Tratați erorile de conexiune, fișiere inaccesibile sau golirea mesajelor.
+
+Mesajele de eroare trebuie afișate clar într-un MessageBox.
+
+Cerințe tehnice
+
+Limbaj: C#
+
+Framework: .NET Framework 4.8 sau .NET 6 (Windows Forms)
+
+Structura recomandată:
+
+FormChat.cs – logica principală a chatului
+
+ChatMessage.cs – clasă pentru reprezentarea unui mesaj
+
+ChatManager.cs – responsabil de salvare, încărcare și printare
+
+NetworkHandler.cs – responsabil de trimiterea/primirea mesajelor între ferestre

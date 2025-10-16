@@ -1,0 +1,10 @@
+16.10.2025 18:50:36: Server started on port 5000
+16.10.2025 18:52:20: Server started on port 5000
+16.10.2025 18:52:20: User A instance started
+16.10.2025 18:52:20: User A: Loaded 2 messages from history
+16.10.2025 18:52:25: [User A] SENT: asdasd
+16.10.2025 18:52:31: [AlexandruCL] SENT: aaaaaaaa
+16.10.2025 18:52:33: User A: Conversation saved with 4 messages
+16.10.2025 18:53:00: User A: Chat printed
+16.10.2025 18:53:03: User A: Chat cleared
+16.10.2025 18:53:05: User A: Application closed

@@ -1,0 +1,1 @@
+// This file is auto-generated and contains settings for the application, such as user preferences.

@@ -1,0 +1,7 @@
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.Forms.MainForm.resources
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.csproj.GenerateResource.cache
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.GeneratedMSBuildEditorConfig.editorconfig
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.AssemblyInfoInputs.cache
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.AssemblyInfo.cs
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.csproj.CoreCompileInputs.cache
+D:\An_3\FCPL\Project\ChatApplication\obj\Debug\net6.0-windows\ChatApplication.sourcelink.json
