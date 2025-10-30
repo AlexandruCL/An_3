@@ -68,3 +68,45 @@ asdadsadsa
 16.10.2025 19:02:30: User: Loaded 5 messages from history
 16.10.2025 19:02:33: User: Application closed
 16.10.2025 19:02:33 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+30.10.2025 12:57:41: Server started on port 5000
+30.10.2025 12:57:41: alex instance started on port 5000
+30.10.2025 12:57:41: alex: Loaded 0 messages from history
+30.10.2025 12:57:56: Server started on port 5001
+30.10.2025 12:57:56: alex instance started on port 5001
+30.10.2025 12:57:56: alex: Loaded 0 messages from history
+30.10.2025 12:57:58: Connected to port 5000
+30.10.2025 12:57:58: Client connected on port 5000
+30.10.2025 12:58:05: alex: Application closed
+30.10.2025 12:58:05 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+30.10.2025 12:58:06: alex: Application closed
+30.10.2025 12:58:06 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+30.10.2025 13:09:08: Server started on port 5000
+30.10.2025 13:09:08: User instance started on port 5000
+30.10.2025 13:09:08: User: Loaded 0 messages from history
+30.10.2025 13:09:12: Server started on port 5001
+30.10.2025 13:09:12: User instance started on port 5001
+30.10.2025 13:09:12: User: Loaded 0 messages from history
+30.10.2025 13:09:14: Client connected on port 5000
+30.10.2025 13:09:15: [User2] SENT: asda
+30.10.2025 13:09:16: [User2] RECEIVED: asda
+30.10.2025 13:09:21: [User] SENT: asdasdasda
+30.10.2025 13:09:21: [User] RECEIVED: asdasdasda
+30.10.2025 13:09:33: User: Chat printed
+30.10.2025 13:09:37: User: Conversation saved with 2 messages
+30.10.2025 13:09:48: User: Application closed
+30.10.2025 13:09:48 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+30.10.2025 13:09:49: User: Application closed
+30.10.2025 13:09:49 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+30.10.2025 13:09:56: Server started on port 5000
+30.10.2025 13:09:56: User instance started on port 5000
+30.10.2025 13:09:56: User: Loaded 0 messages from history
+30.10.2025 13:10:00: User: Chat printed
+30.10.2025 13:10:01: User: Application closed
+30.10.2025 13:10:01 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.
+30.10.2025 13:10:59: Server started on port 5000
+30.10.2025 13:10:59: User instance started on port 5000
+30.10.2025 13:10:59: User: Loaded 0 messages from history
+30.10.2025 13:11:03: [User] SENT: asdadsada
+30.10.2025 13:11:04: User: Conversation saved with 1 messages
+30.10.2025 13:11:21: User: Application closed
+30.10.2025 13:11:21 [ERROR]: Listen error: The I/O operation has been aborted because of either a thread exit or an application request.

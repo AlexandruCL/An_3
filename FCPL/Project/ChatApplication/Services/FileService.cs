@@ -23,6 +23,35 @@ namespace ChatApplication.Services
             File.WriteAllLines(_filePath, lines);
         }
 
+        // NEW METHOD for saving conversations to project root/SavedChats folder
+        public void SaveConversation(List<ChatMessage> messages, string userName)
+        {
+            // Get the project root directory (goes up from bin\Debug\net8.0-windows to project root)
+            string projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\"));
+            string savedChatsDirectory = Path.Combine(projectRoot, "SavedChats");
+            Directory.CreateDirectory(savedChatsDirectory);
+            
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string fileName = $"conversation_{userName.Replace(" ", "_")}_{timestamp}.txt";
+            string filePath = Path.Combine(savedChatsDirectory, fileName);
+
+            var lines = new List<string>
+            {
+                $"=== Chat Conversation ===",
+                $"User: {userName}",
+                $"Saved: {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                $"Messages: {messages.Count}",
+                $"========================\n"
+            };
+
+            foreach (var msg in messages)
+            {
+                lines.Add($"[{msg.Timestamp:yyyy-MM-dd HH:mm:ss}] {msg.Username}: {msg.Text}");
+            }
+
+            File.WriteAllLines(filePath, lines);
+        }
+
         public List<ChatMessage> LoadMessages()
         {
             var messages = new List<ChatMessage>();

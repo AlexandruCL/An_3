@@ -1,0 +1,8 @@
+=== Chat Conversation ===
+User: User
+Saved: 2025-10-30 13:09:36
+Messages: 2
+========================
+
+[2025-10-30 13:09:15] User2: asda
+[2025-10-30 13:09:21] User: asdasdasda

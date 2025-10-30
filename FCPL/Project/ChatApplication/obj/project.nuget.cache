@@ -10,5 +10,15 @@
     "C:\\Users\\alexc\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.21\\microsoft.aspnetcore.app.ref.8.0.21.nupkg.sha512",
     "C:\\Users\\alexc\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.21\\microsoft.netcore.app.host.win-x64.8.0.21.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "message": "Problem reading the cache file D:\\An_3\\FCPL\\Project\\ChatApplication\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
+      "projectPath": "D:\\An_3\\FCPL\\Project\\ChatApplication\\ChatApplication.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\An_3\\FCPL\\Project\\ChatApplication\\ChatApplication.csproj",
+      "targetGraphs": []
+    }
+  ]
 }
