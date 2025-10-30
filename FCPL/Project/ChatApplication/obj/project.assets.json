@@ -60,11 +60,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\An_3\\FCPL\\Project\\ChatApplication\\ChatApplication.csproj",
+      "projectUniqueName": "E:\\An_3\\FCPL\\Project\\ChatApplication\\ChatApplication.csproj",
       "projectName": "ChatApplication",
-      "projectPath": "D:\\An_3\\FCPL\\Project\\ChatApplication\\ChatApplication.csproj",
+      "projectPath": "E:\\An_3\\FCPL\\Project\\ChatApplication\\ChatApplication.csproj",
       "packagesPath": "C:\\Users\\alexc\\.nuget\\packages\\",
-      "outputPath": "D:\\An_3\\FCPL\\Project\\ChatApplication\\obj\\",
+      "outputPath": "E:\\An_3\\FCPL\\Project\\ChatApplication\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\alexc\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -116,19 +116,19 @@
         "downloadDependencies": [
           {
             "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.20, 8.0.20]"
+            "version": "[8.0.21, 8.0.21]"
           },
           {
             "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[8.0.20, 8.0.20]"
+            "version": "[8.0.21, 8.0.21]"
           },
           {
             "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.20, 8.0.20]"
+            "version": "[8.0.21, 8.0.21]"
           },
           {
             "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.20, 8.0.20]"
+            "version": "[8.0.21, 8.0.21]"
           }
         ],
         "frameworkReferences": {
@@ -139,7 +139,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -214,7 +214,8 @@ namespace ChatApplication.Forms
         {
             try
             {
-                fileService.SaveMessages(chatSession.GetMessages());
+                // Save conversation to app folder
+                fileService.SaveConversation(chatSession.GetMessages(), userName);
                 MessageBox.Show("Conversation saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 Logger.LogMessage($"{userName}: Conversation saved with {chatSession.GetMessages().Count} messages");
             }
