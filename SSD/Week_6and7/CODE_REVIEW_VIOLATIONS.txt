@@ -1,0 +1,621 @@
+================================================================================
+                ATM PROJECT - CODE REVIEW
+        SOLID PRINCIPLES & LAW OF DEMETER VIOLATIONS
+================================================================================
+SUMMARY: HIGH AND MEDIUM SEVERITY ISSUES ONLY
+Total Issues: 14
+- Law of Demeter Violations: 6
+- SOLID Violations: 8
+
+(Low severity issues have been removed from this report)
+
+================================================================================
+LAW OF DEMETER VIOLATIONS
+================================================================================
+
+VIOLATION #1: Excessive Chain Calls in ATM.java
+--------------------------------------------------------------------------------
+Location: ATM.java - Multiple locations in authenticate() and doChangePIN()
+
+Issue:
+Line 48: session.customer().getFullName()
+Line 67: bank.getCustomerByCard(cardNumber)
+Line 181: session.customer().getCard().getCardNumber()
+Line 187: session.customer().getPrimaryAccountId()
+
+Problem:
+- Multiple method chains violate Law of Demeter
+- ATM should not reach through Customer to get Card details
+- Creates tight coupling between ATM -> Session -> Customer -> Card
+
+Quick Solution:
+Option 1: Add delegation methods to Session:
+  public String getCustomerName() { return customer.getFullName(); }
+  public String getCardNumber() { return customer.getCard().getCardNumber(); }
+
+Option 2: Add methods to Customer:
+  public String getCardNumber() { return card.getCardNumber(); }
+  public boolean verifyPin(String pin) { return card.getPin().equals(pin); }
+
+This reduces chains: session.getCustomerName() instead of session.customer().getFullName()
+
+
+VIOLATION #2: Train Wreck in ATM.doBalance()
+--------------------------------------------------------------------------------
+Location: ATM.java, lines 114, 120
+
+Issue:
+Line 114: String acctId = acct.getId()
+Line 120: lines.put("Account", acct.getId());
+
+Problem:
+- Direct access to Account internals
+- ATM knows too much about Account structure
+
+Quick Solution:
+Account should provide formatted display methods:
+  public Map<String, String> getDisplayInfo() {
+    Map<String, String> info = new LinkedHashMap<>();
+    info.put("Account", getId());
+    info.put("Type", getType());
+    return info;
+  }
+
+
+VIOLATION #3: Bank.verifyPIN() Chain
+--------------------------------------------------------------------------------
+Location: Bank.java, line 35
+
+Issue:
+return c.getCard().isActive() && c.getCard().getPin().equals(pin);
+
+Problem:
+- Bank reaches through Customer to Card
+- Three levels deep: Bank -> Customer -> Card -> Pin
+- Violates "only talk to immediate friends"
+
+Quick Solution:
+Move PIN verification to Customer class:
+  // In Customer.java
+  public boolean verifyPin(String pin) {
+    return card.isActive() && card.getPin().equals(pin);
+  }
+  
+  // In Bank.java
+  return c.verifyPin(pin);
+
+
+VIOLATION #4: Bank.lockCard() Chain
+--------------------------------------------------------------------------------
+Location: Bank.java, line 41
+
+Issue:
+customersById.get(cid).getCard().setActive(false);
+
+Problem:
+- Bank directly manipulates Card state through Customer
+- Should use tell-don't-ask principle
+
+Quick Solution:
+Add method to Customer:
+  // In Customer.java
+  public void lockCard() {
+    card.setActive(false);
+  }
+  
+  // In Bank.java
+  Customer c = customersById.get(cid);
+  if (c != null) c.lockCard();
+
+
+VIOLATION #5: Bank.changePIN() Chain
+--------------------------------------------------------------------------------
+Location: Bank.java, line 76
+
+Issue:
+c.getCard().setPin(newPin);
+
+Problem:
+- Bank manipulates Card internals through Customer
+- Tight coupling between Bank and Card implementation
+
+Quick Solution:
+Add method to Customer:
+  // In Customer.java
+  public void changePin(String newPin) {
+    card.setPin(newPin);
+  }
+  
+  // In Bank.java
+  c.changePin(newPin);
+
+
+VIOLATION #6: ATM.selectAccount() Display Logic
+--------------------------------------------------------------------------------
+Location: ATM.java, line 199
+
+Issue:
+screen.println((i + 1) + ") " + a.getId() + " [" + a.getType() + "] - Balance: " + CurrencyUtil.fmt(a.getBalance()));
+
+Problem:
+- ATM knows too much about Account's internal structure
+- Multiple getter calls on Account object
+
+Quick Solution:
+Add display method to Account:
+  // In Account.java
+  public String toMenuString(int number) {
+    return number + ") " + id + " [" + type + "] - Balance: " + CurrencyUtil.fmt(balance);
+  }
+  
+  // In ATM.java
+  screen.println(a.toMenuString(i + 1));
+
+
+================================================================================
+SOLID PRINCIPLES VIOLATIONS
+================================================================================
+
+SOLID VIOLATION #1: Single Responsibility Principle (SRP)
+--------------------------------------------------------------------------------
+Location: ATM.java - The entire class
+
+Issue:
+ATM class has too many responsibilities:
+1. User authentication
+2. Menu management
+3. Transaction orchestration
+4. Account selection logic
+5. Input validation
+6. Receipt generation coordination
+7. Business logic (PIN validation, amount checks)
+
+Problem:
+- Class is 202 lines doing multiple unrelated tasks
+- Hard to test individual concerns
+- Changes to authentication affect transaction handling
+
+Quick Solution:
+Split into multiple classes:
+
+1. AuthenticationService.java:
+   - Handle authenticate() logic
+   - Manage PIN attempts
+   - Card locking
+
+2. TransactionCoordinator.java:
+   - Execute transactions (doBalance, doWithdrawal, etc.)
+   - Validate amounts
+   - Log transactions
+
+3. MenuController.java:
+   - Handle mainMenu() logic
+   - Menu display and navigation
+   - User choice routing
+
+4. AccountSelector.java:
+   - Handle selectAccount() logic
+   - Account display formatting
+
+Each class would have ONE reason to change.
+
+
+SOLID VIOLATION #2: Open/Closed Principle (OCP)
+--------------------------------------------------------------------------------
+Location: ATM.java, mainMenu() method, lines 87-109
+
+Issue:
+Switch statement with hardcoded transaction types:
+  case 1 -> doBalance(session);
+  case 2 -> doWithdrawal(session);
+  case 3 -> doDeposit(session);
+  ...
+
+Problem:
+- Adding new transaction type requires modifying ATM class
+- Cannot extend without modification
+- Violates OCP
+
+Quick Solution:
+Use Command Pattern or Strategy Pattern:
+
+1. Create TransactionHandler interface:
+   public interface TransactionHandler {
+     void execute(Session session, ATM atm);
+     String getMenuLabel();
+   }
+
+2. Implement for each transaction:
+   public class BalanceInquiryHandler implements TransactionHandler {
+     public void execute(Session session, ATM atm) { /* logic */ }
+     public String getMenuLabel() { return "Balance inquiry"; }
+   }
+
+3. Register handlers in a map:
+   Map<Integer, TransactionHandler> handlers = new HashMap<>();
+   handlers.put(1, new BalanceInquiryHandler());
+   handlers.put(2, new WithdrawalHandler());
+   
+4. Execute:
+   TransactionHandler handler = handlers.get(choice);
+   if (handler != null) handler.execute(session, this);
+
+Now adding new transactions doesn't require changing ATM code.
+
+
+SOLID VIOLATION #3: Dependency Inversion Principle (DIP)
+--------------------------------------------------------------------------------
+Location: ATM.java, ATMApp.java
+
+Issue:
+ATM depends on concrete implementations:
+- private final Bank bank;
+- private final Screen screen;
+- private final Keypad keypad;
+
+Problem:
+- ATM is tightly coupled to concrete classes
+- Cannot easily swap implementations
+- Difficult to mock for testing
+
+Quick Solution:
+Introduce interfaces:
+
+1. Create interfaces:
+   public interface BankingService {
+     boolean cardExists(String cardNumber);
+     Customer getCustomerByCard(String cardNumber);
+     boolean verifyPIN(String cardNumber, String pin);
+     void lockCard(String cardNumber);
+     // ... other methods
+   }
+
+   public interface Display {
+     void println(String message);
+     void title(String title);
+     void hr();
+   }
+
+   public interface InputDevice {
+     int readInt(String prompt);
+     double readDouble(String prompt);
+     String readPIN(String prompt);
+   }
+
+2. Update ATM constructor:
+   private final BankingService bankingService;
+   private final Display display;
+   private final InputDevice input;
+
+This allows different implementations (e.g., RemoteBank, GUIScreen).
+
+
+SOLID VIOLATION #4: Interface Segregation Principle (ISP)
+--------------------------------------------------------------------------------
+Location: Bank.java
+
+Issue:
+Bank class exposes too many methods to all clients:
+- Authentication methods (verifyPIN, lockCard)
+- Account management (getBalance, withdraw, deposit, transfer)
+- Customer management (addCustomer, getCustomerByCard)
+- Transaction logging (logTransaction, getRecentTransactions)
+
+Problem:
+- Clients like ATM need all Bank methods
+- Violates ISP: clients shouldn't depend on methods they don't use
+- Different clients need different subsets of functionality
+
+Quick Solution:
+Split Bank into focused interfaces:
+
+1. public interface AuthenticationService {
+     boolean cardExists(String cardNumber);
+     boolean verifyPIN(String cardNumber, String pin);
+     void lockCard(String cardNumber);
+   }
+
+2. public interface AccountService {
+     double getBalance(String accountId);
+     void withdraw(String accountId, double amount);
+     void deposit(String accountId, double amount);
+     void transfer(String fromId, String toId, double amount);
+   }
+
+3. public interface CustomerService {
+     Customer getCustomerByCard(String cardNumber);
+     List<Account> getAccountsByCustomer(String customerId);
+   }
+
+4. public interface AuditService {
+     void logTransaction(Transaction t);
+     List<Transaction> getRecentTransactions(String customerId, int max);
+   }
+
+5. Bank implements all interfaces:
+   public class Bank implements AuthenticationService, AccountService, 
+                                CustomerService, AuditService { ... }
+
+Clients depend only on interfaces they need.
+
+
+SOLID VIOLATION #5: Single Responsibility Principle (SRP)
+--------------------------------------------------------------------------------
+Location: Bank.java
+
+Issue:
+Bank class has multiple responsibilities:
+1. Customer management (addCustomer, getCustomerByCard)
+2. Account management (addAccount, getAccountsByCustomer)
+3. Authentication (verifyPIN, lockCard, cardExists)
+4. Transaction execution (withdraw, deposit, transfer)
+5. Audit logging (logTransaction, getRecentTransactions)
+6. Data storage (multiple HashMap fields)
+
+Problem:
+- Single class doing 6 different jobs
+- Changes to logging affect transaction logic
+- Hard to test individual concerns
+
+Quick Solution:
+Split into multiple classes:
+
+1. CustomerRepository.java:
+   - Manage customersById map
+   - addCustomer(), getCustomer()
+
+2. AccountRepository.java:
+   - Manage accountsById map
+   - addAccount(), getAccount()
+
+3. AuthenticationService.java:
+   - Manage cardToCustomerId map
+   - verifyPIN(), lockCard()
+
+4. TransactionService.java:
+   - withdraw(), deposit(), transfer()
+   - Use repositories to access data
+
+5. AuditLogger.java:
+   - Manage auditLog deque
+   - logTransaction(), getRecentTransactions()
+
+6. BankFacade.java:
+   - Coordinate all services
+   - Provide unified interface
+
+
+SOLID VIOLATION #6: Open/Closed Principle (OCP)
+--------------------------------------------------------------------------------
+Location: Transaction.java hierarchy
+
+Issue:
+All transaction types have nearly identical structure:
+- BalanceInquiry, Deposit, Withdrawal, Transfer, PinChange
+- Each implements same methods with similar patterns
+- Adding new transaction requires creating new class
+
+Problem:
+- Duplication across transaction classes
+- toDisplayString() logic varies slightly but is repetitive
+
+Quick Solution:
+Use Template Method Pattern:
+
+public abstract class Transaction {
+  protected final String type;
+  protected final LocalDateTime ts = LocalDateTime.now();
+  protected final double amount;
+  
+  // Template method
+  public String toDisplayString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(tsFmt()).append(" | ").append(type);
+    appendDetails(sb);
+    return sb.toString();
+  }
+  
+  // Hook method for subclasses
+  protected abstract void appendDetails(StringBuilder sb);
+}
+
+public class Deposit extends Transaction {
+  protected void appendDetails(StringBuilder sb) {
+    sb.append(" | acct=").append(accountId)
+      .append(" | +").append(CurrencyUtil.fmt(amount));
+  }
+}
+
+Reduces duplication and makes adding transactions easier.
+
+
+SOLID VIOLATION #7: Open/Closed Principle (OCP)
+--------------------------------------------------------------------------------
+Location: CashDispenser.java
+
+Issue:
+Hardcoded denominations and fixed array size:
+  private final int[] denom = {10, 20, 50, 100};
+  private final int[] counts = new int[4];
+
+Problem:
+- Cannot add/remove denominations without modifying class
+- Different ATMs might have different denominations
+- Violates OCP
+
+Quick Solution:
+Make denominations configurable:
+
+public class CashDispenser {
+  private final List<Denomination> denominations;
+  
+  public static class Denomination {
+    private final int value;
+    private int count;
+    
+    public Denomination(int value, int count) {
+      this.value = value;
+      this.count = count;
+    }
+  }
+  
+  public CashDispenser(List<Denomination> denominations) {
+    this.denominations = new ArrayList<>(denominations);
+    this.denominations.sort((a, b) -> Integer.compare(b.value, a.value));
+  }
+  
+  public CashDispenser(int... valueCountPairs) {
+    this.denominations = new ArrayList<>();
+    for (int i = 0; i < valueCountPairs.length; i += 2) {
+      denominations.add(new Denomination(valueCountPairs[i], valueCountPairs[i+1]));
+    }
+  }
+}
+
+Now can create ATM with any denominations:
+  new CashDispenser(5, 100, 10, 50, 20, 50, 50, 30, 100, 20)
+
+
+SOLID VIOLATION #8: Single Responsibility Principle (SRP)
+--------------------------------------------------------------------------------
+Location: Keypad.java
+
+Issue:
+Keypad handles:
+1. Integer input with validation
+2. Double input with validation and formatting
+3. String input
+4. PIN input with console handling
+5. Error messages to user
+
+Problem:
+- Mixing input reading with validation
+- Mixing input with output (error messages)
+- Too many different input types in one class
+
+Quick Solution:
+Split into InputReader and InputValidator:
+
+1. InputReader.java:
+   public class InputReader {
+     private final Scanner scanner;
+     
+     public String readLine(String prompt) {
+       System.out.print(prompt);
+       return scanner.nextLine();
+     }
+     
+     public String readSecure(String prompt) {
+       Console console = System.console();
+       if (console != null) {
+         return new String(console.readPassword(prompt));
+       }
+       return readLine(prompt);
+     }
+   }
+
+2. InputValidator.java:
+   public class InputValidator {
+     private final InputReader reader;
+     
+     public int readInt(String prompt) {
+       while (true) {
+         try {
+           return Integer.parseInt(reader.readLine(prompt));
+         } catch (NumberFormatException e) {
+           System.out.println("Enter a valid integer.");
+         }
+       }
+     }
+   }
+
+3. Keypad becomes a facade:
+   public class Keypad {
+     private final InputValidator validator;
+     
+     public int readInt(String prompt) {
+       return validator.readInt(prompt);
+     }
+   }
+
+
+================================================================================
+ADDITIONAL OBSERVATIONS
+================================================================================
+
+OBSERVATION #1: Magic Numbers
+--------------------------------------------------------------------------------
+Location: Multiple files
+Issue: 
+- ATM.java line 60: while (attempts < 3) - hardcoded max attempts
+- ATM.java line 80: auditLog max size 500 - hardcoded limit
+- ATM.java line 172: max 10 transactions - hardcoded limit
+
+Solution: Use constants or configuration:
+  public class ATMConfiguration {
+    public static final int MAX_PIN_ATTEMPTS = 3;
+    public static final int MAX_AUDIT_LOG_SIZE = 500;
+    public static final int DEFAULT_STATEMENT_SIZE = 10;
+  }
+
+
+OBSERVATION #2: Missing Validation
+--------------------------------------------------------------------------------
+Location: Account.java
+Issue: 
+- setBalance() allows setting negative balance
+- No encapsulation of balance changes
+
+Solution:
+  public void setBalance(double balance) {
+    if (balance < 0) {
+      throw new IllegalArgumentException("Balance cannot be negative");
+    }
+    this.balance = balance;
+  }
+
+
+OBSERVATION #3: Data Exposure
+--------------------------------------------------------------------------------
+Location: Account.java, Customer.java
+Issue:
+- All getters expose internal state
+- Allows external modification of balance
+
+Solution:
+- Remove setBalance() from public API
+- Add specific methods: credit(), debit()
+- Keep balance modification internal
+
+
+================================================================================
+PRIORITY RECOMMENDATIONS
+================================================================================
+
+HIGH PRIORITY (Fix First):
+1. Split ATM class (SRP violation #1) - Too many responsibilities
+2. Reduce Law of Demeter violations in ATM and Bank (Violations #1-5)
+3. Split Bank class (SRP violation #5) - Too many responsibilities
+4. Add interfaces for DIP (Violation #3)
+
+MEDIUM PRIORITY (Fix Second):
+5. Implement Command Pattern for transactions (OCP violation #2)
+6. Split Bank into focused interfaces (ISP violation #4)
+7. Make CashDispenser configurable (OCP violation #7)
+8. Refactor Keypad (SRP violation #8)
+
+================================================================================
+TESTING RECOMMENDATIONS
+================================================================================
+
+Current Code is Hard to Test Because:
+- Tight coupling to concrete classes
+- No dependency injection
+- Side effects in constructors
+- Static methods in utilities
+
+After Refactoring:
+- Mock interfaces instead of concrete classes
+- Test each responsibility in isolation
+- Use dependency injection for all dependencies
+- Write unit tests for each small class
