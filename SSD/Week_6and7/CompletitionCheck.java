@@ -371,7 +371,7 @@ class SimpleAuthService implements IAuthentication {
 // is not prepared
 // to handle, it will cause an Exception). Practically the derived postcondition
 // is weaker than
-// the base one( it needs to be “mai smechera” stronger).
+// the base one( it needs to be stronger).
 
 // 4.
 
