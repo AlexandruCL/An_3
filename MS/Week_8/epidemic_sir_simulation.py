@@ -42,14 +42,14 @@ FPS = 60
 INITIAL_POPULATION = 100
 INITIAL_INFECTED = 5
 VACCINATION_RATE = 0.3  # 30% of population attempts vaccination
-VACCINATION_SUCCESS_RATE = 0.9  # 90% success rate
+VACCINATION_SUCCESS_RATE = 0.5  # 50% success rate
 
 # Disease parameters
 BASE_INFECTION_PROBABILITY = 0.002  # Per frame when in proximity
 INFECTION_DISTANCE = 15
 EXPOSURE_THRESHOLD = 60  # Frames of exposure before high infection risk
 INFECTION_DURATION = 300  # Frames before recovery attempt
-RECOVERY_PROBABILITY = 0.7  # 70% chance to recover, 30% to die
+RECOVERY_PROBABILITY = 0.6  # 60% chance to recover, 40% to die
 
 # Movement parameters
 AGENT_SPEED = 2.0
@@ -58,7 +58,7 @@ GROUPING_DISTANCE = 40
 
 # Quarantine
 QUARANTINE_ZONE = pygame.Rect(50, 50, 200, 150)
-QUARANTINE_ENABLED = True
+QUARANTINE_ENABLED = False
 
 # Initialize screen and clock
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
