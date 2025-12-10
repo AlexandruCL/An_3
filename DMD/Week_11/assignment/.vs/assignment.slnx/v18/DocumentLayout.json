@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\An_3\\DMD\\Week_11\\assignment\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{24D8B277-D1E5-47DD-883E-7D57EEF47B27}|assignment\\assignment.vcxproj|D:\\An_3\\DMD\\Week_11\\assignment\\assignment\\assignment.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{24D8B277-D1E5-47DD-883E-7D57EEF47B27}|assignment\\assignment.vcxproj|solutionrelative:assignment\\assignment.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "assignment.cpp",
+              "DocumentMoniker": "D:\\An_3\\DMD\\Week_11\\assignment\\assignment\\assignment.cpp",
+              "RelativeDocumentMoniker": "assignment\\assignment.cpp",
+              "ToolTip": "D:\\An_3\\DMD\\Week_11\\assignment\\assignment\\assignment.cpp",
+              "RelativeToolTip": "assignment\\assignment.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-10T12:19:48.336Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
