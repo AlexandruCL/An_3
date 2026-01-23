@@ -49,3 +49,8 @@ B) Intervention: a contact-reduction policy after a chosen day (e.g., day 20), r
 ## Notes / limitations
 - Random mixing (no spatial network), no births/deaths, no vaccination.
 - Parameters are simplified and intended for course demonstration.
+
+S (Susceptible): People who can catch the disease
+E (Exposed): Infected but not yet infectious (incubation period ~5.1 days)
+I (Infectious): Actively spreading the disease (~7 days)
+R (Recovered): Immune/removed from transmission
