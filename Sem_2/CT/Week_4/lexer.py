@@ -6,51 +6,52 @@ from typing import Optional
 
 # ── Token codes ──────────────────────────────────────────────────────────────
 class TokenCode(IntEnum):
-    ID         = 0
-    END        = 1
-    CT_INT     = 2
-    CT_REAL    = 3
-    CT_CHAR    = 4
-    CT_STRING  = 5
+    # codes aligned with FSM final-state ids from the diagram
+    ID         = 2
+    END        = 31
+    CT_INT     = 4
+    CT_REAL    = 14
+    CT_CHAR    = 19
+    CT_STRING  = 21
     # delimiters
-    COMMA      = 6
-    SEMICOLON  = 7
-    LPAR       = 8
-    RPAR       = 9
-    LBRACKET   = 10
-    RBRACKET   = 11
-    LACC       = 12
-    RACC       = 13
+    COMMA      = 22
+    SEMICOLON  = 23
+    LPAR       = 24
+    RPAR       = 25
+    LBRACKET   = 26
+    RBRACKET   = 27
+    LACC       = 28
+    RACC       = 29
     # operators
-    ADD        = 14
-    SUB        = 15
-    MUL        = 16
-    DIV        = 17
-    DOT        = 18
-    AND        = 19
-    OR         = 20
-    NOT        = 21
-    NOTEQ      = 22
-    LESS       = 23
-    LESSEQ     = 24
-    GREATER    = 25
-    GREATEREQ  = 26
-    ASSIGN     = 27
-    EQUAL      = 28
+    ADD        = 33
+    SUB        = 34
+    MUL        = 35
+    DIV        = 54
+    DOT        = 36
+    AND        = 38
+    OR         = 40
+    NOT        = 42
+    NOTEQ      = 43
+    LESS       = 48
+    LESSEQ     = 49
+    GREATER    = 51
+    GREATEREQ  = 52
+    ASSIGN     = 45
+    EQUAL      = 46
     # keywords
-    BREAK      = 29
-    CHAR       = 30
-    DOUBLE     = 31
-    ELSE       = 32
-    FOR        = 33
-    IF         = 34
-    INT        = 35
-    RETURN     = 36
-    STRUCT     = 37
-    VOID       = 38
-    WHILE      = 39
+    BREAK      = 57
+    CHAR       = 58
+    DOUBLE     = 59
+    ELSE       = 60
+    FOR        = 61
+    IF         = 62
+    INT        = 63
+    RETURN     = 64
+    STRUCT     = 65
+    VOID       = 66
+    WHILE      = 67
     # line comment (consumed, not emitted as token)
-    LINECOMMENT = 40
+    LINECOMMENT = 56
 
 
 # ── Token class ──────────────────────────────────────────────────────────────
@@ -193,24 +194,20 @@ def get_next_token() -> int:
                 state = 41
             elif ch == '<':
                 p_crt_ch += 1
-                state = 44
+                state = 47
             elif ch == '=':
                 p_crt_ch += 1
-                state = 47
+                state = 44
             elif ch == '>':
                 p_crt_ch += 1
                 state = 50
             elif ch == '/':
                 p_crt_ch += 1
                 state = 53
-            elif ch in (' ', '\r', '\t'):
-                p_crt_ch += 1               # consume whitespace, stay in state 0
-            elif ch == '\n':
-                line += 1
-                p_crt_ch += 1
+            elif ch in (' ', '\r', '\t', '\n'):
+                state = 32                 # SPACE state
             elif ch == '\0':                # end of input
-                add_tk(TokenCode.END)
-                return TokenCode.END
+                state = 30                 # END pre-final state
             else:
                 tkerr(add_tk(TokenCode.END), f"invalid character: {ch!r}")
 
@@ -243,90 +240,109 @@ def get_next_token() -> int:
             return tk.code
 
         # ═══════════════════════════════════════════════════════════════
-        #  STATES 3–4 — decimal integer (started with 1-9)
+        #  STATES 3–7 — integer paths (decimal/octal/hex) ending in state 4
         # ═══════════════════════════════════════════════════════════════
-        elif state == 3:
+        elif state == 3:                    # decimal integer body (started with 1-9)
             if ch.isdigit():
-                p_crt_ch += 1               # stay in state 3
+                p_crt_ch += 1
             elif ch == '.':
                 p_crt_ch += 1
-                state = 11                  # transition to real number
+                state = 8
             elif ch in ('e', 'E'):
-                p_crt_ch += 1
-                state = 15                  # exponent → real number
-            else:
-                state = 4
-
-        elif state == 4:                    # CT_INT final
-            tk = add_tk(TokenCode.CT_INT)
-            tk.i = int(input_buf[p_start_ch:p_crt_ch])
-            return tk.code
-
-        # ═══════════════════════════════════════════════════════════════
-        #  STATES 5–10 — integer starting with 0 (octal / hex / plain 0)
-        # ═══════════════════════════════════════════════════════════════
-        elif state == 5:
-            if ch == 'x' or ch == 'X':
-                p_crt_ch += 1
-                state = 8                   # hex
-            elif ch == '.':
-                p_crt_ch += 1
-                state = 11                  # real starting with 0.
-            elif '0' <= ch <= '7':
-                p_crt_ch += 1
-                state = 6                   # octal
-            else:
-                state = 4                   # just the digit 0
-
-        elif state == 6:                    # reading octal digits
-            if '0' <= ch <= '7':
-                p_crt_ch += 1
-            else:
-                state = 7
-
-        elif state == 7:                    # octal CT_INT final
-            tk = add_tk(TokenCode.CT_INT)
-            tk.i = int(input_buf[p_start_ch:p_crt_ch], 8)
-            return tk.code
-
-        elif state == 8:                    # after 0x — need at least one hex digit
-            if ch in '0123456789abcdefABCDEF':
                 p_crt_ch += 1
                 state = 9
             else:
+                state = 4
+
+        elif state == 4:                    # CT_INT final (shared final state in diagram)
+            lexeme = input_buf[p_start_ch:p_crt_ch]
+            tk = add_tk(TokenCode.CT_INT)
+            if lexeme.startswith(('0x', '0X')):
+                tk.i = int(lexeme, 16)
+            elif len(lexeme) > 1 and lexeme.startswith('0') and all('0' <= c <= '7' for c in lexeme):
+                tk.i = int(lexeme, 8)
+            else:
+                tk.i = int(lexeme, 10)
+            return tk.code
+
+        elif state == 5:                    # started with 0
+            if '0' <= ch <= '7':
+                p_crt_ch += 1               # 5 -> 5 (octal loop)
+            elif ch in ('8', '9'):
+                p_crt_ch += 1
+                state = 3                   # 5 -> 3
+            elif ch in ('x', 'X'):
+                p_crt_ch += 1
+                state = 6                   # 5 -> 6 (hex prefix)
+            elif ch == '.':
+                p_crt_ch += 1
+                state = 8                   # 5 -> 8 (real with fractional part)
+            elif ch in ('e', 'E'):
+                p_crt_ch += 1
+                state = 9                   # 5 -> 9 (real with exponent)
+            else:
+                state = 4                   # 5 -> 4
+
+        elif state == 6:                    # after 0x/0X, require first hex digit
+            if ch in '0123456789abcdefABCDEF':
+                p_crt_ch += 1
+                state = 7
+            else:
                 tkerr(add_tk(TokenCode.END), "invalid hex literal")
 
-        elif state == 9:                    # reading hex digits
+        elif state == 7:                    # hex digits loop
             if ch in '0123456789abcdefABCDEF':
                 p_crt_ch += 1
             else:
-                state = 10
-
-        elif state == 10:                   # hex CT_INT final
-            tk = add_tk(TokenCode.CT_INT)
-            tk.i = int(input_buf[p_start_ch:p_crt_ch], 16)
-            return tk.code
+                state = 4                   # 6 -> 7 -> 4
 
         # ═══════════════════════════════════════════════════════════════
-        #  STATES 11–16 — real number (CT_REAL)
+        #  STATES 8–16 — real number (CT_REAL in state 14)
         # ═══════════════════════════════════════════════════════════════
-        elif state == 11:                   # after decimal point
+        elif state == 8:                    # after decimal point
             if ch.isdigit():
                 p_crt_ch += 1
-                state = 12
+                state = 10
             else:
                 tkerr(add_tk(TokenCode.END), "expected digit after '.'")
 
-        elif state == 12:                   # fractional digits
+        elif state == 9:                    # exponent path entered directly from int states
+            if ch in ('+', '-'):
+                p_crt_ch += 1
+                state = 15
+            elif ch.isdigit():
+                p_crt_ch += 1
+                state = 16
+            else:
+                tkerr(add_tk(TokenCode.END), "expected digit or sign after exponent")
+
+        elif state == 10:                   # fractional digits
             if ch.isdigit():
                 p_crt_ch += 1
             elif ch in ('e', 'E'):
                 p_crt_ch += 1
-                state = 15
+                state = 11
             else:
                 state = 14
 
-        elif state == 13:                   # exponent digits
+        elif state == 11:                   # exponent after fractional part
+            if ch in ('+', '-'):
+                p_crt_ch += 1
+                state = 12
+            elif ch.isdigit():
+                p_crt_ch += 1
+                state = 13
+            else:
+                tkerr(add_tk(TokenCode.END), "expected digit or sign after exponent")
+
+        elif state == 12:                   # exponent sign after fractional part
+            if ch.isdigit():
+                p_crt_ch += 1
+                state = 13
+            else:
+                tkerr(add_tk(TokenCode.END), "expected digit after exponent sign")
+
+        elif state == 13:                   # exponent digits after fractional part
             if ch.isdigit():
                 p_crt_ch += 1
             else:
@@ -337,22 +353,18 @@ def get_next_token() -> int:
             tk.r = float(input_buf[p_start_ch:p_crt_ch])
             return tk.code
 
-        elif state == 15:                   # after e/E
-            if ch in ('+', '-'):
-                p_crt_ch += 1
-                state = 16
-            elif ch.isdigit():
-                p_crt_ch += 1
-                state = 13
-            else:
-                tkerr(add_tk(TokenCode.END), "expected digit or sign after exponent")
-
-        elif state == 16:                   # after e/E and +/-
+        elif state == 15:                   # exponent sign (direct exponent path)
             if ch.isdigit():
                 p_crt_ch += 1
-                state = 13
+                state = 16
             else:
                 tkerr(add_tk(TokenCode.END), "expected digit after exponent sign")
+
+        elif state == 16:                   # exponent digits (direct exponent path)
+            if ch.isdigit():
+                p_crt_ch += 1
+            else:
+                state = 14
 
         # ═══════════════════════════════════════════════════════════════
         #  STATES 17–19 — character literal (CT_CHAR)
@@ -423,10 +435,24 @@ def get_next_token() -> int:
             add_tk(TokenCode.RACC);       return TokenCode.RACC
 
         # ═══════════════════════════════════════════════════════════════
-        #  STATES 30–32 — END / SPACE (handled in state 0, listed for
-        #  completeness of the FSM numbering)
+        #  STATES 30–32 — END / SPACE
         # ═══════════════════════════════════════════════════════════════
-        # (states 30/31 = END, 32 = SPACE are consumed in state 0)
+        elif state == 30:
+            state = 31
+
+        elif state == 31:
+            add_tk(TokenCode.END)
+            return TokenCode.END
+
+        elif state == 32:
+            if ch == '\n':
+                line += 1
+                p_crt_ch += 1
+            elif ch in (' ', '\r', '\t'):
+                p_crt_ch += 1
+            else:
+                tkerr(add_tk(TokenCode.END), f"invalid space character: {ch!r}")
+            state = 0
 
         # ═══════════════════════════════════════════════════════════════
         #  STATES 33–36 — single-character operators
@@ -483,36 +509,36 @@ def get_next_token() -> int:
             add_tk(TokenCode.NOTEQ);  return TokenCode.NOTEQ
 
         # ═══════════════════════════════════════════════════════════════
-        #  STATES 44–46 — < / <= (LESS / LESSEQ)
+        #  STATES 44–46 — = / == (ASSIGN / EQUAL)
         # ═══════════════════════════════════════════════════════════════
         elif state == 44:
             if ch == '=':
                 p_crt_ch += 1
-                state = 45
-            else:
                 state = 46
+            else:
+                state = 45
 
         elif state == 45:
-            add_tk(TokenCode.LESSEQ);  return TokenCode.LESSEQ
+            add_tk(TokenCode.ASSIGN);  return TokenCode.ASSIGN
 
         elif state == 46:
-            add_tk(TokenCode.LESS);    return TokenCode.LESS
+            add_tk(TokenCode.EQUAL);   return TokenCode.EQUAL
 
         # ═══════════════════════════════════════════════════════════════
-        #  STATES 47–49 — = / == (ASSIGN / EQUAL)
+        #  STATES 47–49 — < / <= (LESS / LESSEQ)
         # ═══════════════════════════════════════════════════════════════
         elif state == 47:
             if ch == '=':
                 p_crt_ch += 1
-                state = 48
-            else:
                 state = 49
+            else:
+                state = 48
 
         elif state == 48:
-            add_tk(TokenCode.EQUAL);   return TokenCode.EQUAL
+            add_tk(TokenCode.LESS);    return TokenCode.LESS
 
         elif state == 49:
-            add_tk(TokenCode.ASSIGN);  return TokenCode.ASSIGN
+            add_tk(TokenCode.LESSEQ);  return TokenCode.LESSEQ
 
         # ═══════════════════════════════════════════════════════════════
         #  STATES 50–52 — > / >= (GREATER / GREATEREQ)
