@@ -401,7 +401,14 @@ def get_next_token() -> int:
         #  STATES 20–21 — string literal (CT_STRING)
         # ═══════════════════════════════════════════════════════════════
         elif state == 20:                   # reading string content
-            if ch == '"':
+            if ch == '\\':
+                # Consume escaped character inside string (e.g. \" or \\).
+                p_crt_ch += 1
+                if p_crt_ch < len(input_buf) and input_buf[p_crt_ch] != '\0':
+                    p_crt_ch += 1
+                else:
+                    tkerr(add_tk(TokenCode.END), "unterminated string literal")
+            elif ch == '"':
                 tk = add_tk(TokenCode.CT_STRING)
                 tk.text = create_string(p_start_ch, p_crt_ch)
                 p_crt_ch += 1
