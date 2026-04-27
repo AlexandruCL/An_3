@@ -1,0 +1,47 @@
+👤 Student 1 — Slides 1, 2, 3
+[Slide 1 – Title]
+
+"Hi everyone, today we're presenting the PIR Motion Sensor — one of the most widely used sensors in IoT and smart devices. I'm [Name], and together with [Name], we'll walk you through how it works, where it's used, and how to connect it to a board."
+
+[Slide 2 – Working Principles]
+
+"PIR stands for Passive Infrared. The word passive is key — the sensor doesn't emit anything. Instead, it detects infrared radiation that's naturally emitted by warm bodies, like humans or animals.
+Inside the sensor there are two pyroelectric elements placed side by side. When a person moves across the sensor's field of view, one element picks up more IR than the other — that difference triggers the output to go HIGH.
+The Fresnel lens on the front focuses and segments the infrared field, giving the sensor its characteristic detection zones. The output is a simple digital signal — HIGH when motion is detected, LOW when it's not. That simplicity is what makes it so popular in IoT."
+
+[Slide 3 – Applications]
+
+"Because it's cheap, low-power, and needs no complex processing, the PIR sensor shows up everywhere:
+
+Automatic lighting in hallways and bathrooms
+Burglar alarms and security cameras
+Energy management systems that turn off HVAC when a room is empty
+People counters in retail stores
+Even wildlife cameras in the field
+
+Essentially, any application that needs to know 'is someone here?' without a camera is a candidate for a PIR sensor."
+
+
+👤 Student 2 — Slides 4, 5, 6
+[Slide 4 – Commercial Products]
+
+"Let's look at some real products built around this technology.
+The HC-SR501 is the classic hobbyist module — it costs under a euro, has adjustable sensitivity and delay, and works directly with Arduino or Raspberry Pi.
+On the consumer side, the Philips Hue Motion Sensor and Ring Motion Detector use PIR as their core detection method for smart home automation.
+For professional security, the Bosch DS151i is an industry-standard PIR detector with tamper protection and long-range detection up to 15 meters.
+So the same core technology scales from a €0.80 module all the way to enterprise security systems."
+
+[Slide 5 – Code + Wiring]
+
+"Connecting a PIR to an Arduino is about as simple as it gets. Three pins: VCC to 5V, GND to GND, and the output pin to digital pin 2.
+The code reads that pin and triggers an LED on pin 13:
+if (digitalRead(pirPin) == HIGH) {
+  digitalWrite(ledPin, HIGH); // motion detected
+}
+The sensor handles all the signal processing internally — you just read a HIGH or LOW. You can also tune the onboard potentiometers to adjust sensitivity and how long the output stays HIGH after detection."
+
+[Slide 6 – References]
+
+"To wrap up — the PIR motion sensor is a mature, reliable, and incredibly accessible technology. It's a perfect example of how a single well-designed component can power everything from a €5 Arduino project to a commercial security system.
+Our references include the official HC-SR501 datasheet, Arduino's sensor documentation, and the Wikipedia overview of PIR sensors — all listed on this slide.
+Thanks for listening — we're happy to take any questions!"
