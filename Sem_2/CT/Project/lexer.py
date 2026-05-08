@@ -617,6 +617,11 @@ def tokenize(source: str):
 # ── Pretty-print helper ─────────────────────────────────────────────────────
 def show_tokens():
     """Walk the token list and print each token."""
+    print_tokens(sys.stdout)
+
+
+def print_tokens(stream):
+    """Write the token list to a text stream."""
     tk = tokens
     while tk:
         name = TokenCode(tk.code).name
@@ -627,24 +632,23 @@ def show_tokens():
             extra = f" int={tk.i}"
         if tk.r is not None:
             extra = f" real={tk.r}"
-        print(f"line {tk.line}: {name}{extra}")
+        print(f"line {tk.line}: {name}{extra}", file=stream)
         tk = tk.next
 
 
 # ── Main (quick test) ───────────────────────────────────────────────────────
 if __name__ == "__main__":
-    test_input = (
-        'int main() {\n'
-        '  int x = 10;\n'
-        '  double pi = 3.14e-2;\n'
-        '  if (x >= 5 && x != 0) {\n'
-        '    return x + 1;\n'
-        '  }\n'
-        '  // this is a comment\n'
-        '  char c = \'a\';\n'
-        '  void *p;\n'
-        '}\n'
-    )
-    print(f"Input:\n{test_input}")
-    tokenize(test_input)
-    show_tokens()
+    if len(sys.argv) != 3:
+        print(f"usage: {sys.argv[0]} <input_file> <output_file>", file=sys.stderr)
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
+
+    with open(input_path, "r", encoding="utf-8") as input_file:
+        source = input_file.read()
+
+    tokenize(source)
+
+    with open(output_path, "w", encoding="utf-8") as output_file:
+        print_tokens(output_file)

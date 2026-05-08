@@ -17,4 +17,3 @@ void main()
 	s=sum();
 	put_i(s);
 }
-
