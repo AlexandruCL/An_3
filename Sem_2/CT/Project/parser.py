@@ -70,7 +70,7 @@ def struct_def() -> bool:
 
 
 # ── varDef ───────────────────────────────────────────────────────────────────
-# varDef: typeBase ID arrayDecl? ( COMMA ID arrayDecl? )* SEMICOLON
+# varDef: typeBase ID arrayDecl? SEMICOLON
 def var_def() -> bool:
     global crt_tk
     start_tk = crt_tk
@@ -79,10 +79,6 @@ def var_def() -> bool:
     if not consume(TokenCode.ID):
         tkerr(crt_tk, "missing identifier in variable definition")
     array_decl()  # optional
-    while consume(TokenCode.COMMA):
-        if not consume(TokenCode.ID):
-            tkerr(crt_tk, "missing identifier after , in variable definition")
-        array_decl()  # optional
     if not consume(TokenCode.SEMICOLON):
         # not a varDef — could be fnDef; restore and return False
         crt_tk = start_tk
@@ -108,12 +104,12 @@ def type_base() -> bool:
 
 
 # ── arrayDecl ────────────────────────────────────────────────────────────────
-# arrayDecl: LBRACKET expr? RBRACKET
+# arrayDecl: LBRACKET CT_INT? RBRACKET
 def array_decl() -> bool:
     global crt_tk
     if not consume(TokenCode.LBRACKET):
         return False
-    expr()  # optional size expression
+    consume(TokenCode.CT_INT)  # optional integer constant size
     if not consume(TokenCode.RBRACKET):
         tkerr(crt_tk, "missing ] in array declaration")
     return True

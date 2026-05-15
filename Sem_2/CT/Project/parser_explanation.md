@@ -181,11 +181,11 @@ def struct_def() -> bool:
 
 **Key insight:** If we see `struct Pt` but no `{`, this isn't a struct definition — it's a type name (like `struct Pt points[10];`). So we **backtrack** by restoring `crt_tk = start_tk`.
 
-### `var_def()` — Lines 74–90
+### `var_def()` — Lines 74–86
 
 ```
-Grammar: typeBase ID arrayDecl? ( COMMA ID arrayDecl? )* SEMICOLON
-Example: int i, v[5], s;
+Grammar: typeBase ID arrayDecl? SEMICOLON
+Example: int x;   or   int v[5];
 ```
 
 ```python
@@ -195,10 +195,6 @@ def var_def() -> bool:
     if not consume(TokenCode.ID):
         tkerr(crt_tk, "missing identifier")
     array_decl()                               # Optional: [5]
-    while consume(TokenCode.COMMA):            # More variables: , v[5], s
-        if not consume(TokenCode.ID):
-            tkerr(crt_tk, "missing identifier after ,")
-        array_decl()
     if not consume(TokenCode.SEMICOLON):       # No semicolon?
         crt_tk = start_tk                      # → could be fnDef, backtrack
         return False
@@ -206,6 +202,8 @@ def var_def() -> bool:
 ```
 
 **Why backtrack on missing `;`?** Because `int sum(` starts exactly like a variable def (`int sum`) but is actually a function definition. If we don't find `;`, we restore and let `fn_def()` try.
+
+> **Note:** Only a single variable per declaration is supported (matching the PDF grammar). `int a, b;` is **not** valid.
 
 ### `type_base()` — Lines 95–107
 
@@ -227,12 +225,14 @@ def type_base() -> bool:
     return False
 ```
 
-### `array_decl()` — Lines 112–119
+### `array_decl()` — Lines 108–115
 
 ```
-Grammar: arrayDecl: LBRACKET expr? RBRACKET
-Example: [5]  or  [20/4+5]  or  []
+Grammar: arrayDecl: LBRACKET CT_INT? RBRACKET
+Example: [5]  or  []
 ```
+
+Only an optional **integer constant** is allowed as the array size. Arbitrary expressions (like `[n*2]`) are **not** supported by this grammar.
 
 ### `fn_def()` — Lines 126–148
 
