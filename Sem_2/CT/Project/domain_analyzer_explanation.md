@@ -506,7 +506,250 @@ f        cls=func     mem=global  type=int        arg: a type=int
 
 ---
 
-## 11. Summary
+## 12. Beyond the Documentation — What a Full Domain Analyzer Would Add
+
+The current implementation strictly follows the "AtomC - analiza de domeniu.pdf" documentation, which only specifies semantic actions for **definitions** (structDef, varDef, fnDef, fnParam). However, a complete domain analyzer would also check **usage** — verifying that symbols are valid when they appear in expressions. Below are the extensions a professor might ask about, with exact code changes.
+
+---
+
+### 12.1 Check that variables/functions used in expressions are defined
+
+**Problem:** Currently, `expr_primary()` consumes an `ID` without checking if that name exists in the symbol table. This means `x = undefinedVar;` would pass silently.
+
+**Where to change:** `expr_primary()` in `domain_analyzer.py` (line ~664)
+
+**Current code:**
+```python
+def expr_primary() -> bool:
+    global crt_tk
+    if consume(TokenCode.ID):
+        if consume(TokenCode.LPAR):
+            ...
+        return True
+```
+
+**Changed code:**
+```python
+def expr_primary() -> bool:
+    global crt_tk
+    if consume(TokenCode.ID):
+        tk_name = consumed_tk
+        s = findSymbol(tk_name.text)
+        if not s:
+            tkerr(crt_tk, f"undefined identifier: {tk_name.text}")
+        if consume(TokenCode.LPAR):
+            # It's a function call — verify it's actually a function
+            if s.cls != CLS_FUNC and s.cls != CLS_EXTFUNC:
+                tkerr(crt_tk, f"{tk_name.text} is not a function")
+            if expr():
+                while consume(TokenCode.COMMA):
+                    if not expr():
+                        tkerr(crt_tk, "invalid expression after , in function call")
+            if not consume(TokenCode.RPAR):
+                tkerr(crt_tk, "missing ) in function call")
+        return True
+```
+
+**What it does:** After consuming an ID, we call `findSymbol()` (searches all depths, right-to-left) to verify the name exists. If followed by `(`, we also verify it's classified as a function.
+
+---
+
+### 12.2 Check function call argument count
+
+**Problem:** `put_i(1, 2, 3)` would pass silently even though `put_i` takes exactly 1 argument.
+
+**Where to change:** Same `expr_primary()` function, inside the function call branch.
+
+**Changed code (extending 12.1):**
+```python
+        if consume(TokenCode.LPAR):
+            if s.cls != CLS_FUNC and s.cls != CLS_EXTFUNC:
+                tkerr(crt_tk, f"{tk_name.text} is not a function")
+            # Count arguments
+            arg_count = 0
+            if expr():
+                arg_count = 1
+                while consume(TokenCode.COMMA):
+                    if not expr():
+                        tkerr(crt_tk, "invalid expression after , in function call")
+                    arg_count += 1
+            if not consume(TokenCode.RPAR):
+                tkerr(crt_tk, "missing ) in function call")
+            # Verify argument count
+            expected = len(s.args)
+            if arg_count != expected:
+                tkerr(crt_tk, f"{tk_name.text} expects {expected} args, got {arg_count}")
+```
+
+**What it does:** Counts the comma-separated expressions in the call and compares against `len(s.args)`.
+
+---
+
+### 12.3 Check struct member access (dot operator)
+
+**Problem:** `p.nonexistent` would pass silently. We should verify that after `.`, the member name actually exists in the struct definition.
+
+**Where to change:** `expr_postfix1()` in `domain_analyzer.py` (line ~655)
+
+**Current code:**
+```python
+def expr_postfix1() -> bool:
+    global crt_tk
+    ...
+    if consume(TokenCode.DOT):
+        if not consume(TokenCode.ID):
+            tkerr(crt_tk, "missing identifier after .")
+        return expr_postfix1()
+    return True
+```
+
+**Changed code:**
+```python
+    if consume(TokenCode.DOT):
+        if not consume(TokenCode.ID):
+            tkerr(crt_tk, "missing identifier after .")
+        # To fully validate, we would need the type of the left-hand
+        # expression. This requires type propagation (see 12.5).
+        # A simpler check: verify the member name exists in SOME struct:
+        tk_member = consumed_tk
+        # Full version (with type propagation) would be:
+        # if left_type.tb != TB_STRUCT:
+        #     tkerr(crt_tk, "dot operator requires struct type")
+        # found = False
+        # for m in left_type.s.members:
+        #     if m.name == tk_member.text:
+        #         found = True; break
+        # if not found:
+        #     tkerr(crt_tk, f"struct has no member '{tk_member.text}'")
+        return expr_postfix1()
+```
+
+**Why it's hard:** The dot check requires knowing the **type** of the expression to the left of `.`. This means every expression rule would need to return/propagate a `Type` — which leads to section 12.5.
+
+---
+
+### 12.4 Track varIdx and typeSize (memory layout)
+
+**Problem:** The documentation mentions `varIdx`, `typeSize()`, and `allocInGlobalMemory()` for computing memory offsets, but we skipped them since they're code-generation concerns. A professor might ask to add them.
+
+**Where to add:** New helper function + modifications to `var_def()`.
+
+**New helper — add after the Symbol Table Operations section:**
+```python
+# Global memory offset tracker
+global_mem_offset: int = 0
+
+def typeSize(t: Type) -> int:
+    """Return the size in bytes of a Type."""
+    BASE_SIZES = {TB_INT: 4, TB_DOUBLE: 8, TB_CHAR: 1, TB_VOID: 0}
+    if t.n < 0:  # scalar
+        if t.tb == TB_STRUCT:
+            # sum of all member sizes
+            return sum(typeSize(m.type) for m in t.s.members)
+        return BASE_SIZES.get(t.tb, 0)
+    else:  # array
+        elem_t = Type()
+        elem_t.tb = t.tb
+        elem_t.s = t.s
+        elem_t.n = -1
+        return t.n * typeSize(elem_t) if t.n > 0 else 0
+
+def allocInGlobalMemory(size: int) -> int:
+    """Allocate `size` bytes in global memory, return the start offset."""
+    global global_mem_offset
+    offset = global_mem_offset
+    global_mem_offset += size
+    return offset
+```
+
+**Changes in `var_def()` — replace the owner block with:**
+```python
+    var = addSymbol(tk_name.text, CLS_VAR)
+    var.type = copy_type(t)
+    if owner:
+        if owner.cls == CLS_FUNC:
+            var.mem = MEM_LOCAL
+            var.varIdx = len(owner.locals)       # ← NEW
+            owner.locals.append(dup_symbol(var))
+        elif owner.cls == CLS_STRUCT:
+            var.varIdx = typeSize(owner.type)     # ← NEW
+            owner.members.append(dup_symbol(var))
+    else:
+        var.mem = MEM_GLOBAL
+        var.varIdx = allocInGlobalMemory(typeSize(t))  # ← NEW
+```
+
+**Changes in `fn_param()` — add paramIdx:**
+```python
+    param = addSymbol(tk_name.text, CLS_VAR)
+    param.type = copy_type(t)
+    param.mem = MEM_ARG
+    param.paramIdx = len(owner.args)             # ← NEW
+    owner.args.append(dup_symbol(param))
+```
+
+**Also add `varIdx` and `paramIdx` fields to the `Symbol.__init__`:**
+```python
+    self.varIdx: int = 0      # memory offset / index
+    self.paramIdx: int = 0    # parameter index (for MEM_ARG)
+```
+
+---
+
+### 12.5 Full type propagation in expressions (advanced)
+
+**Problem:** To do proper type checking (type compatibility in assignments, return types, struct member validation), every expression function would need to return not just `bool` but also the resulting `Type`.
+
+**Approach:** Change every `expr_*` function signature from `-> bool` to `-> Optional[Type]`, where `None` means "didn't match" and a `Type` means "matched, and here's the type of the result."
+
+**Example — `expr_primary` with type propagation:**
+```python
+def expr_primary() -> Optional[Type]:
+    global crt_tk
+    if consume(TokenCode.ID):
+        tk_name = consumed_tk
+        s = findSymbol(tk_name.text)
+        if not s:
+            tkerr(crt_tk, f"undefined: {tk_name.text}")
+        if consume(TokenCode.LPAR):
+            # function call — return type is the function's return type
+            ...
+            return copy_type(s.type)  # return type of the function
+        # variable — return the variable's type
+        return copy_type(s.type)
+    if consume(TokenCode.CT_INT):
+        t = Type(); t.tb = TB_INT; t.n = -1
+        return t
+    if consume(TokenCode.CT_REAL):
+        t = Type(); t.tb = TB_DOUBLE; t.n = -1
+        return t
+    if consume(TokenCode.CT_CHAR):
+        t = Type(); t.tb = TB_CHAR; t.n = -1
+        return t
+    if consume(TokenCode.CT_STRING):
+        t = Type(); t.tb = TB_CHAR; t.n = 0
+        return t
+    ...
+    return None  # didn't match
+```
+
+**Impact:** This is a large refactor — every `expr_*` function and every call site would need updating. The `bool` checks (`if not expr()`) become `if expr() is None`. This is typically done in a separate **type analysis** phase rather than inside domain analysis.
+
+---
+
+### Quick Reference — What to add if asked
+
+| Question from professor | Section | Difficulty | Lines to change |
+|---|---|---|---|
+| "Check if variables are defined when used" | 12.1 | Easy | ~5 lines in `expr_primary` |
+| "Check if functions are called correctly" | 12.2 | Easy | ~10 lines in `expr_primary` |
+| "Validate struct member access" | 12.3 | Hard | Needs type propagation (12.5) |
+| "Add memory layout / varIdx" | 12.4 | Medium | ~15 lines + new functions |
+| "Full type checking" | 12.5 | Hard | Refactor all expr_* functions |
+
+---
+
+## 13. Summary
 
 | Concept | What it means |
 |---|---|

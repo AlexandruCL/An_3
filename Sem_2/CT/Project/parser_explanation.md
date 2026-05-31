@@ -643,6 +643,287 @@ parse("int x;")
 
 ---
 
+## 12. Beyond the Documentation — What a Professor Might Ask You to Add
+
+The current parser strictly follows the grammar from "AtomC - reguli sintactice.pdf". Below are common extensions a professor might request during a live exam, with exact code changes.
+
+---
+
+### 12.1 Multi-variable declarations: `int a, b, c;`
+
+**Problem:** The grammar only allows `typeBase ID arrayDecl? SEMICOLON` — one variable per declaration. Test files like `0.c` use `int i,v[5],s;` which currently fails.
+
+**Where to change:** `var_def()` in `parser.py` (line ~74)
+
+**Current code:**
+```python
+def var_def() -> bool:
+    global crt_tk
+    start_tk = crt_tk
+    if not type_base():
+        return False
+    if not consume(TokenCode.ID):
+        tkerr(crt_tk, "missing identifier in variable definition")
+    array_decl()  # optional
+    if not consume(TokenCode.SEMICOLON):
+        crt_tk = start_tk
+        return False
+    return True
+```
+
+**Changed code:**
+```python
+def var_def() -> bool:
+    global crt_tk
+    start_tk = crt_tk
+    if not type_base():
+        return False
+    if not consume(TokenCode.ID):
+        tkerr(crt_tk, "missing identifier in variable definition")
+    array_decl()  # optional
+    # Support comma-separated declarations: int a, b[5], c;
+    while consume(TokenCode.COMMA):
+        if not consume(TokenCode.ID):
+            tkerr(crt_tk, "missing identifier after , in variable definition")
+        array_decl()  # optional
+    if not consume(TokenCode.SEMICOLON):
+        crt_tk = start_tk
+        return False
+    return True
+```
+
+**What it adds:** After the first `ID arrayDecl?`, a `while` loop consumes `COMMA ID arrayDecl?` groups. The new grammar becomes:
+```
+varDef: typeBase ID arrayDecl? ( COMMA ID arrayDecl? )* SEMICOLON
+```
+
+---
+
+### 12.2 Do-while loop: `do stm while(expr);`
+
+**Problem:** C has `do { ... } while(condition);` but the AtomC grammar doesn't include it.
+
+**Where to change:** `stm()` in `parser.py` — add a new branch after the WHILE branch (line ~200).
+
+**Code to add (insert after the WHILE block, before FOR):**
+```python
+    # DO stm WHILE LPAR expr RPAR SEMICOLON
+    if consume(TokenCode.DO):       # Note: needs DO added to TokenCode and lexer
+        if not stm():
+            tkerr(crt_tk, "missing statement after do")
+        if not consume(TokenCode.WHILE):
+            tkerr(crt_tk, "missing while after do body")
+        if not consume(TokenCode.LPAR):
+            tkerr(crt_tk, "missing ( after while in do-while")
+        if not expr():
+            tkerr(crt_tk, "invalid expression in do-while condition")
+        if not consume(TokenCode.RPAR):
+            tkerr(crt_tk, "missing ) after do-while condition")
+        if not consume(TokenCode.SEMICOLON):
+            tkerr(crt_tk, "missing ; after do-while")
+        return True
+```
+
+**Also requires:** Adding `DO = 68` to `TokenCode` in `lexer.py` and adding `elif word == "do": tk = add_tk(TokenCode.DO)` in state 2 of the lexer.
+
+---
+
+### 12.3 Expression-based array size: `int v[n*2];`
+
+**Problem:** `arrayDecl` only accepts `CT_INT` as the array size. Expressions like `[n+1]` or `[10/2]` aren't supported.
+
+**Where to change:** `array_decl()` in `parser.py` (line ~108)
+
+**Current code:**
+```python
+def array_decl() -> bool:
+    global crt_tk
+    if not consume(TokenCode.LBRACKET):
+        return False
+    consume(TokenCode.CT_INT)  # optional integer constant size
+    if not consume(TokenCode.RBRACKET):
+        tkerr(crt_tk, "missing ] in array declaration")
+    return True
+```
+
+**Changed code:**
+```python
+def array_decl() -> bool:
+    global crt_tk
+    if not consume(TokenCode.LBRACKET):
+        return False
+    expr()  # optional expression as array size (replaces CT_INT)
+    if not consume(TokenCode.RBRACKET):
+        tkerr(crt_tk, "missing ] in array declaration")
+    return True
+```
+
+**What it does:** Replaces `consume(CT_INT)` with `expr()`, allowing any expression as the array dimension. The new grammar becomes:
+```
+arrayDecl: LBRACKET expr? RBRACKET
+```
+
+**Note:** This is purely syntactic — the domain analyzer would still need to verify the expression evaluates to a constant integer.
+
+---
+
+### 12.4 Compound assignment operators: `+=`, `-=`, `*=`, `/=`
+
+**Problem:** C supports `x += 5` but AtomC only has `=`.
+
+**Where to change:** `expr_assign()` in `parser.py` (line ~275) + lexer changes.
+
+**Lexer additions** (in `TokenCode` enum):
+```python
+ADDASSIGN  = 70
+SUBASSIGN  = 71
+MULASSIGN  = 72
+DIVASSIGN  = 73
+```
+
+**Lexer FSM changes** — modify the `+`, `-`, `*`, `/` states to check for `=` after them. For example, state 33 (ADD) becomes:
+```python
+elif state == 33:
+    if ch == '=':
+        p_crt_ch += 1
+        add_tk(TokenCode.ADDASSIGN); return TokenCode.ADDASSIGN
+    add_tk(TokenCode.ADD); return TokenCode.ADD
+```
+
+**Parser change in `expr_assign()`:**
+```python
+def expr_assign() -> bool:
+    global crt_tk
+    start_tk = crt_tk
+    if expr_unary():
+        if (consume(TokenCode.ASSIGN) or consume(TokenCode.ADDASSIGN)
+                or consume(TokenCode.SUBASSIGN) or consume(TokenCode.MULASSIGN)
+                or consume(TokenCode.DIVASSIGN)):
+            if not expr_assign():
+                tkerr(crt_tk, "invalid expression after assignment operator")
+            return True
+        crt_tk = start_tk
+    return expr_or()
+```
+
+---
+
+### 12.5 Increment/Decrement: `i++`, `i--`
+
+**Problem:** C supports `i++` and `i--` but AtomC doesn't.
+
+**Where to change:** `expr_postfix1()` in `parser.py` (line ~447) + lexer.
+
+**Lexer additions:**
+```python
+INCREMENT = 74   # ++
+DECREMENT = 75   # --
+```
+
+**Lexer FSM** — modify the `+` state (33) and `-` state (34):
+```python
+elif state == 33:       # after +
+    if ch == '+':
+        p_crt_ch += 1
+        add_tk(TokenCode.INCREMENT); return TokenCode.INCREMENT
+    add_tk(TokenCode.ADD); return TokenCode.ADD
+
+elif state == 34:       # after -
+    if ch == '-':
+        p_crt_ch += 1
+        add_tk(TokenCode.DECREMENT); return TokenCode.DECREMENT
+    add_tk(TokenCode.SUB); return TokenCode.SUB
+```
+
+**Parser change — add to `expr_postfix1()`:**
+```python
+def expr_postfix1() -> bool:
+    global crt_tk
+    if consume(TokenCode.LBRACKET):
+        if not expr():
+            tkerr(crt_tk, "invalid expression inside []")
+        if not consume(TokenCode.RBRACKET):
+            tkerr(crt_tk, "missing ] in postfix expression")
+        return expr_postfix1()
+    if consume(TokenCode.DOT):
+        if not consume(TokenCode.ID):
+            tkerr(crt_tk, "missing identifier after .")
+        return expr_postfix1()
+    # ── NEW: postfix increment/decrement ──
+    if consume(TokenCode.INCREMENT) or consume(TokenCode.DECREMENT):
+        return expr_postfix1()
+    return True  # ε
+```
+
+---
+
+### 12.6 Error recovery (continue parsing after an error)
+
+**Problem:** Currently, `tkerr()` calls `sys.exit(-1)` — one error kills the whole compilation. Real compilers report multiple errors.
+
+**Where to change:** Error handling approach — replace `tkerr` with exception + synchronization.
+
+**Step 1 — Create a custom exception (add at the top of parser.py):**
+```python
+class SyntaxError(Exception):
+    pass
+
+errors: list[str] = []
+
+def soft_tkerr(tk, msg):
+    """Record an error instead of exiting."""
+    errors.append(f"error in line {tk.line}: {msg}")
+```
+
+**Step 2 — Add a synchronization function:**
+```python
+def sync_to(*codes):
+    """Skip tokens until we find one of the given codes."""
+    global crt_tk
+    while crt_tk.code != TokenCode.END:
+        if crt_tk.code in codes:
+            return
+        crt_tk = crt_tk.next
+```
+
+**Step 3 — Use it in stm() for recovery:**
+```python
+    # Replace: tkerr(crt_tk, "missing ; after expression")
+    # With:
+    if not consume(TokenCode.SEMICOLON):
+        soft_tkerr(crt_tk, "missing ; after expression")
+        sync_to(TokenCode.SEMICOLON, TokenCode.RACC)
+        consume(TokenCode.SEMICOLON)  # consume the sync token if found
+```
+
+**Step 4 — At the end of `parse()`, report all errors:**
+```python
+def parse(source):
+    ...
+    unit()
+    if errors:
+        for e in errors:
+            print(e, file=sys.stderr)
+        sys.exit(-1)
+```
+
+**Trade-off:** Error recovery is tricky — bad synchronization can cause cascading false errors. It's usually only done for semicolons and closing braces.
+
+---
+
+### Quick Reference — What to add if asked
+
+| Question from professor | Section | Difficulty | Files to change |
+|---|---|---|---|
+| "Support `int a, b, c;`" | 12.1 | **Easy** | parser.py only (~3 lines) |
+| "Add do-while" | 12.2 | **Easy** | lexer.py + parser.py (~10 lines each) |
+| "Allow expressions as array size" | 12.3 | **Trivial** | parser.py only (1 line change) |
+| "Add `+=`, `-=`, etc." | 12.4 | **Medium** | lexer.py + parser.py (~15 lines) |
+| "Add `++` and `--`" | 12.5 | **Medium** | lexer.py + parser.py (~10 lines) |
+| "Don't exit on first error" | 12.6 | **Hard** | parser.py (many call sites) |
+
+---
+
 ## Summary of Key Concepts
 
 | Concept | What it means |
@@ -655,3 +936,4 @@ parse("int x;")
 | **tkerr()** | Fatal error — prints message with line number and exits |
 | **Return False** | "This rule didn't match, but that's OK — try something else" |
 | **Error vs False** | Error = impossible state; False = just didn't match this alternative |
+
